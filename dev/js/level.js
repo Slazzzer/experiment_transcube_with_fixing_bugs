@@ -276,9 +276,10 @@ var Level = Class.extend({
                     var e = Object.$get(Entities, ent.name);
                     if (e && ent.type !== "region") {
                         var o = {};
-                        if (ent.properties && ent.properties.target || ent.properties.name) {
-                            o._target = ent.properties.target;
-                            o._name = ent.properties.name;
+                        var props = ent.properties || {};
+                        if (props.target || props.name) {
+                            o._target = props.target;
+                            o._name = props.name;
                         }
                         var e = new e(ent.x, ent.y, ent);
                         Object.$merge(e, o);

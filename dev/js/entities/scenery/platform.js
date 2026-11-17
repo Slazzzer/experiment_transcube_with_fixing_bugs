@@ -96,7 +96,7 @@ var Platform = Entity.extend({
         }
     },
 
-    untriggered: function(game) {
+    untriggered: function(by, game) {
         if (--this.triggerCount < this.neededTriggers) {
             this.untrigger(game);
             this.active = false;

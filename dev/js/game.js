@@ -9,6 +9,28 @@ var p = require('./engine/physics');
 var Assets = require('./engine/assets');
 var Message = require('./engine/message');
 
+// Level progress is kept in localStorage. Storage may be unavailable (blocked
+// site data, some private modes) or hold garbage; neither may break the game,
+// and garbage must not count as "everything unlocked".
+var Progress = {
+    memory: 0,
+
+    get: function() {
+        var n;
+        try {
+            n = parseInt(localStorage.getItem('unlocked'), 10);
+        } catch (e) {}
+        return (isNaN(n) || n < 0) ? this.memory : n;
+    },
+
+    set: function(n) {
+        this.memory = n;
+        try {
+            localStorage.setItem('unlocked', n);
+        } catch (e) {}
+    }
+};
+
 var Game = Class.extend({
     player: null,
     level: null,
@@ -56,7 +78,7 @@ var Game = Class.extend({
         var self = this;
         $('#levels').on('click', '.level', function() {
             var lvl = parseInt($(this).data('level'));
-            if (lvl > parseInt(localStorage.getItem('unlocked'))) return;
+            if (lvl > Progress.get()) return;
 
             self.resetStats();
             self.loadLevel(lvl);
@@ -171,7 +193,14 @@ var Game = Class.extend({
         });
 
         this.initLevels();
-        this.playMusic();
+
+        // Browsers block audio until the player interacts with the page (the
+        // title screen needs a click anyway), so start the music on the first
+        // key press or click instead of on load, where it stayed silent.
+        $(document).on('keydown.unlockaudio mousedown.unlockaudio pointerdown.unlockaudio touchend.unlockaudio', function() {
+            $(document).off('.unlockaudio');
+            if (self.bgMusic) self.playMusic();
+        });
 
         if (config.debug) {
             self.resetStats();
@@ -242,16 +271,12 @@ var Game = Class.extend({
 
     initLevels: function() {
         var n = 0,
-            unlocked = localStorage.getItem('unlocked');
-        if (!unlocked) {
-            localStorage.setItem('unlocked', 0);
-            unlocked = 0;
-        }
+            unlocked = Progress.get();
         for (var i in Assets.Data.levels) {
             if (isNaN(i)) continue;
             var lvlbtn = $('<div class="level"></div>');
 
-            if (parseInt(i) > parseInt(unlocked)) {
+            if (parseInt(i) > unlocked) {
                 lvlbtn.addClass('locked');
             }
 
@@ -344,8 +369,6 @@ var Game = Class.extend({
 
         var time = ~~(((new Date()).getTime() - this.stats.starttime) / 1000);
 
-        ga('send', 'event', 'finish level', this.currentLevelId, time);
-
         $('#stats #time').text(time + '');
         $('#stats #restarts').text(this.stats.restarts + '');
         $('#stats #deaths').text(this.stats.deaths + '');
@@ -369,9 +392,9 @@ var Game = Class.extend({
         var next = this.currentLevelData.next;
         if (!isNaN(next)) {
 
-            var unlocked = parseInt(localStorage.getItem('unlocked'));
+            var unlocked = Progress.get();
             if (parseInt(next) > unlocked) {
-                localStorage.setItem('unlocked', unlocked + 1);
+                Progress.set(unlocked + 1);
                 $($('.level')[parseInt(next)]).removeClass('locked');
             }
         }
@@ -408,13 +431,12 @@ var Game = Class.extend({
     },
 
     loadLevel: function(id) {
-        ga('send', 'event', 'enter level', id);
         var level = Assets.Data.levels[id];
         if (!level) return;
 
         if (!isNaN(id)) {
             var n = parseInt(id);
-            if (n > parseInt(localStorage.getItem('unlocked'))) return;
+            if (n > Progress.get()) return;
         }
 
         this.level = new Level(level, this.stats);

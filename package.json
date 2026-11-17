@@ -1,20 +1,28 @@
 {
   "name": "transcube",
   "description": "A puzzle platformer",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "private": true,
   "author": {
     "name": "Jeroen Verfallie"
   },
+  "scripts": {
+    "build": "node build.js",
+    "release": "node build.js --release",
+    "start": "node build.js --serve",
+    "preview": "node build.js --release --serve"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "jquery-color": "^3.0.0"
+  },
   "devDependencies": {
-    "grunt-contrib-jshint": "~0.7.1",
-    "grunt-contrib-uglify": "~0.2.5",
-    "grunt-browserify2": "~0.1.8",
-    "grunt-contrib-watch": "~0.5.3",
-    "grunt-contrib-jade": "~0.8.0",
-    "grunt-contrib-less": "~0.8.1",
-    "grunt-contrib-copy": "~0.4.1",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-gh-pages": "~0.8.1"
+    "esbuild": "^0.28.2",
+    "less": "^4.9.1",
+    "pug": "^3.0.4"
   },
   "keywords": []
 }

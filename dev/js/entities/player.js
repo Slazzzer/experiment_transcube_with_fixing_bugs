@@ -2,6 +2,7 @@ var Entity = require('./entity');
 
 var Input = require('../engine/input');
 var config = require('../config');
+var p = require('../engine/physics');
 
 var b2Vec2 = Box2D.Common.Math.b2Vec2;
 
@@ -9,7 +10,6 @@ var SPEED = 18;
 var JUMP = 110;
 
 var Player = Entity.extend({
-    canJump: false,
     wentUp: false,
 
     width: 16,
@@ -113,7 +113,9 @@ var Player = Entity.extend({
         }
 
         if (!this.morphing && this.animation != this.animations['endlevel'] && this.animation != this.animations['hit']) {
-            if (!Input.isDown(0)) this.handleMovement(game);
+            // A held mouse button only pauses movement while dragging bodies
+            // around in debug mode (see engine.js).
+            if (!(config.debug && Input.isDown(0))) this.handleMovement(game);
         }
 
         if(!this.couldJump && this.canJump()) {
@@ -158,6 +160,15 @@ var Player = Entity.extend({
                 speed = speed + SPEED;
                 config.perspective.flip = false;
                 this.animation.flip.x = true;
+            }
+
+            // Stop driving into a wall the player already touches. It cannot
+            // move there anyway, and Box2D's continuous collision against the
+            // wall cancels the jump bounce when the player stands on a spawned
+            // block: holding a direction against the wall made it impossible
+            // to jump up a ledge from a block (e.g. the last climb of level 6).
+            if (speed !== 0 && p.playerAgainstWall(this.body, speed > 0 ? 1 : -1)) {
+                speed = 0;
             }
 
             change = speed - vel.x;

@@ -1,3 +1,8 @@
+var config = require('../config');
+
+// Animations advance on the game clock (config.time, one fixed step per logic
+// tick) rather than wall time, so gameplay-relevant animations such as the
+// transform always last the same number of ticks.
 var Animation = Class.extend({
     tilesheet: null,
     scale: null,
@@ -42,19 +47,19 @@ var Animation = Class.extend({
 
         this.loop = loop == undefined ? true : false;
 
-        this._initTime = (new Date()).getTime();
+        this._initTime = config.time;
 
         this.tile = this.sequence[0];
     },
 
     reset: function() {
-        this._initTime = (new Date()).getTime();
+        this._initTime = config.time;
         this.tile = this.sequence[0];
         this.looped = false;
     },
 
     update: function() {
-        var time = (new Date()).getTime();
+        var time = config.time;
         var currentFrame = ~~ (((time - this._initTime) / 1000) / this.frameTime);
         if (!this.loop && currentFrame > this.sequence.length - 1) {
             this.frame = this.sequence.length - 1;
@@ -67,7 +72,7 @@ var Animation = Class.extend({
     },
 
     forceNextFrame: function() {
-        this.frame = (this.frame + 1) % sequence.length;
+        this.frame = (this.frame + 1) % this.sequence.length;
         this.tile = this.sequence[this.frame];
     },
 

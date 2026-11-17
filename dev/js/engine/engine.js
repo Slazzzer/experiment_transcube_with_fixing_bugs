@@ -14,7 +14,15 @@ var Engine = Class.extend({
 
     draws: 0,
 
-    lastUpdate: 16,
+    // Game logic (input, entities, physics) runs at a fixed 60 ticks per
+    // second, independent of the display refresh rate. Previously every
+    // animation frame was one tick, so on 120/144/165Hz screens the whole game
+    // ran 2-3x too fast while timers (e.g. the transform animation) stayed in
+    // real time, which made some levels impossible.
+    tickMs: 1000 / 60,
+    maxTicksPerFrame: 4,
+    accumulator: 0,
+    lastTime: 0,
 
     profiles: 0,
 
@@ -34,16 +42,17 @@ var Engine = Class.extend({
         this.initSounds();
 
         p.initDebug(this.context, config.display.scale);
-        p.dragNDrop(window);
+        // Dragging physics bodies with the mouse is a development aid only;
+        // in a normal build it would let anyone carry the player to the exit.
+        if (config.debug) p.dragNDrop(window);
 
         this.tick();
     },
 
     initSounds: function() {
         soundManager.setup({
-            url: 'media/swf/',
-            flashVersion: 9,
-            preferFlash: true,
+            // HTML5 audio only: Flash is end-of-life and the SWF fallback is no longer shipped.
+            preferFlash: false,
             useHTML5Audio: true,
             useHighPerformance: false,
             onready: function() {
@@ -117,31 +126,37 @@ var Engine = Class.extend({
         }
     },
 
-    togglePause: function() {
-        this.game.paused = !this.game.paused;
-
-        if (!this.game.paused) {
-            this.tick();
-        }
+    now: function() {
+        return (window.performance && performance.now) ? performance.now() : Date.now();
     },
 
     tick: function() {
-        if (!this.game || this.game.paused) {
-            if (this.game) this.draw();
-            return requestAnimFrame(this.tick.bind(this));
+        requestAnimFrame(this.tick.bind(this));
+        if (!this.game) return;
+
+        var now = this.now();
+        if (this.game.paused) {
+            this.lastTime = now;
+            this.accumulator = 0;
+            this.draw();
+            return;
         }
 
-        // Stats.begin();
+        // Cap the catch-up after a stall (e.g. a background tab) instead of
+        // fast-forwarding the level.
+        var elapsed = this.lastTime ? now - this.lastTime : 0;
+        this.accumulator += Math.min(elapsed, this.tickMs * this.maxTicksPerFrame);
+        this.lastTime = now;
 
-        config.tick = (new Date()).getTime() - this.lastUpdate;
-        this.lastUpdate = this.lastUpdate + config.tick;
-        this.update();
-        Input.update();
+        while (this.accumulator >= this.tickMs) {
+            this.accumulator -= this.tickMs;
+            config.tick = this.tickMs;
+            config.time += this.tickMs;
+            this.update();
+            Input.update();
+        }
 
-        requestAnimFrame(this.tick.bind(this));
         this.draw();
-
-        // Stats.end();
     }
 });
 

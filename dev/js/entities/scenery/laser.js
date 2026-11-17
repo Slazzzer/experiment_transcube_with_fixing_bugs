@@ -28,36 +28,40 @@ var Laser = Entity.extend({
         this.direction = prop.flip ? -1 : 1;
         this.color = prop.color || "#ff0000";
 
-        x++;
-        options.width--;
+        // Work on copies: `options` is the shared level data, and mutating it
+        // made the beam 1px shorter (and moved flipped emitters) on every restart.
+        var width = options.width - 1,
+            height = options.height;
 
-        this.axis = options.width > options.height ? 'x' : 'y';
+        x++;
+
+        this.axis = width > height ? 'x' : 'y';
         if (this.direction < 0) {
-            x = this.axis === "x" ? x + options.width : x;
-            y = this.axis === "y" ? y + options.height : y;
+            x = this.axis === "x" ? x + width : x;
+            y = this.axis === "y" ? y + height : y;
         }
 
         if(this.axis === "x") {
-            options.height = 4;
+            height = 4;
         } else {
-            options.width = 4;
+            width = 4;
         }
 
         this.parent(x, y, 1, {
             isSensor: true,
-            width: options.width * (this.axis === "x" ? this.direction : 1),
-            height: options.height * (this.axis === "y" ? this.direction : 1),
+            width: width * (this.axis === "x" ? this.direction : 1),
+            height: height * (this.axis === "y" ? this.direction : 1),
             bodytype: 'b2_staticBody'
         });
 
 
-        this.width = options.width;
-        this.height = options.height;
+        this.width = width;
+        this.height = height;
 
 
-        this.distance = (this.axis === 'x' ? options.width : options.height) * this.direction;
+        this.distance = (this.axis === 'x' ? width : height) * this.direction;
 
-        this.active = !(options.properties && options.properties.inactive);
+        this.active = !prop.inactive;
     },
 
     triggered: function(by) {

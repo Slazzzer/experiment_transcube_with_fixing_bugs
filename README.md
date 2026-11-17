@@ -36,6 +36,33 @@ There are 22 levels in the Compo version. More levels, and level elements to fol
 
 ![Screenshot](http://jeroenverfallie.github.io/ggo13-transcube/media/img/gh_screen.png)
 
+## Running the game
+
+The game loads its levels over HTTP, so it has to be served by a web server;
+opening `index.html` directly from disk does not work.
+
+Requirements: [Node.js](https://nodejs.org/) 20 or newer.
+
+```sh
+npm install        # once, installs the build tools
+npm start          # builds into build/ and serves it on http://localhost:8000
+```
+
+Open http://localhost:8000 in a browser. `npm start` rebuilds automatically when
+files in `dev/` change; reload the page to see the result.
+
+Other commands:
+
+| Command           | What it does                                                     |
+|-------------------|------------------------------------------------------------------|
+| `npm run build`   | development build into `build/` (unminified, with source maps)   |
+| `npm run release` | release build into `dist/` (minified)                            |
+| `npm run preview` | release build, served on http://localhost:8000                   |
+
+The servers listen on `127.0.0.1` only. Set the `PORT` environment variable to
+use another port. `dist/` is a ready-made release build that any static web
+server can host.
+
 ## Spoiler alert
 
 Here's a walkthrough/speedrun of all the level [On vimeo](https://vimeo.com/80929591)
@@ -43,7 +70,7 @@ Here's a walkthrough/speedrun of all the level [On vimeo](https://vimeo.com/8092
 ## Tools, code
 
 * Sublime Text 3: code
-* Grunt: build
+* `build.js` (esbuild, Less, Pug): build (originally Grunt)
 * Photoshop: art
 * Pickle: animations
 * Audactiy: sound edits
@@ -79,6 +106,6 @@ Here's a walkthrough/speedrun of all the level [On vimeo](https://vimeo.com/8092
 ![Code](http://i.imgur.com/tgqFxva.png)  ![Art](http://i.creativecommons.org/l/by-sa/3.0/88x31.png) 
 
 * Code and art by me.
-* External libraries, such as Box2dweb, Google Analytics, jQuery and SoundManager2.
+* External libraries, such as Box2dweb, jQuery and SoundManager2.
 * FreeSound.org for most of the sounds, modified or not.
 * Incompetech.com for music.

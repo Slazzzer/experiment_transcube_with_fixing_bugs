@@ -17,7 +17,14 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2,
 var b2Sep = require('../lib/box_2d_separator');
 var config = require('../config');
 
+var b2AABB = Box2D.Collision.b2AABB,
+    b2Shape = Box2D.Collision.Shapes.b2Shape,
+    b2Transform = Box2D.Common.Math.b2Transform;
 
+function removeCollision(list, ent) {
+    var i = list.indexOf(ent);
+    if (i !== -1) list.splice(i, 1);
+}
 
 var listener = new b2Listener;
 
@@ -77,7 +84,7 @@ listener.EndContact = function(contact) {
         } else {
             if (bodyDataA) {
                 if(bodyDataA.collisions && fixtureDataB && fixtureDataB.ent) {
-                    bodyDataA.collisions.splice(bodyDataA.collisions.indexOf(fixtureDataB.ent), 1);
+                    removeCollision(bodyDataA.collisions, fixtureDataB.ent);
                 }
             }
         }
@@ -94,7 +101,7 @@ listener.EndContact = function(contact) {
         } else {
             if (bodyDataB && fixtureDataA && fixtureDataA.ent) {
                 if(bodyDataB.collisions) {
-                    bodyDataB.collisions.splice(bodyDataB.collisions.indexOf(fixtureDataA.ent), 1);
+                    removeCollision(bodyDataB.collisions, fixtureDataA.ent);
                 }
             }
         }
@@ -104,12 +111,13 @@ listener.EndContact = function(contact) {
 var Physics = {
     world: new b2World(new b2Vec2(0, 9.8), true),
 
-    dtRemaining: 0,
+    // Every game tick advances the world by `substeps` steps of `stepAmount`
+    // seconds. The levels were tuned with exactly 1/15s of simulation per 60Hz
+    // frame (four 1/60s steps), so the engine calls step() at a fixed 60Hz.
     stepAmount: 1 / 60,
+    substeps: 4,
 
     debugDraw: null,
-
-    lastDt: new Date().getTime(),
 
     paused: false,
 
@@ -122,17 +130,9 @@ var Physics = {
     },
 
     step: function() {
-        var ct = new Date().getTime();
-        var dt = (ct - this.lastDt) / 1000;
-        if (dt > 1 / 15) dt = 1 / 15;
-
-        this.dtRemaining += dt;
-        while (this.dtRemaining > this.stepAmount) {
-            this.dtRemaining -= this.stepAmount;
+        for (var i = 0; i < this.substeps; i++) {
             this.world.Step(this.paused ? 0 : this.stepAmount, 8, 3);
         }
-
-        this.lastDt = dt;
     },
 
     setPaused: function(p) {
@@ -183,7 +183,11 @@ var Physics = {
             id: 'foot'
         });
         body.SetUserData({
-            footContacts: 0
+            footContacts: 0,
+            // outer extents of the side fixtures, used by playerAgainstWall()
+            left: -0.3,
+            right: w + 0.3,
+            height: h
         });
 
         return body;
@@ -300,7 +304,7 @@ var Physics = {
         var changeX = speed - vel.x,
             impulseX = body.GetMass() * changeX;
 
-        body.ApplyLinearImpulse(new b2Vec2(impulse, 0), body.GetWorldCenter());
+        body.ApplyImpulse(new b2Vec2(impulseX, 0), body.GetWorldCenter());
     },
 
     createCollisionBox: function(x, y, w, h, options) {
@@ -348,6 +352,44 @@ var Physics = {
         return body;
     },
 
+    // True if static level geometry is right beside the player body on side
+    // `dir` (-1 left, 1 right). The lowest 2px are ignored, so floor seams and
+    // tiny steps behave exactly as before.
+    playerAgainstWall: function(body, dir) {
+        var d = body.GetUserData(),
+            p = body.GetPosition(),
+            x = p.x + (dir > 0 ? d.right : d.left),
+            reach = 0.5;
+
+        return this.staticGeometryAt(dir > 0 ? x : x - reach, p.y + 1, dir > 0 ? x + reach : x, p.y + d.height - 2);
+    },
+
+    // True if a solid fixture of the static level geometry overlaps the
+    // rectangle (x1, y1)-(x2, y2).
+    staticGeometryAt: function(x1, y1, x2, y2) {
+        var aabb = new b2AABB(),
+            probe = new b2PolygonShape(),
+            xf = new b2Transform(),
+            found = false;
+
+        aabb.lowerBound.Set(x1, y1);
+        aabb.upperBound.Set(x2, y2);
+        probe.SetAsOrientedBox((x2 - x1) / 2, (y2 - y1) / 2, new b2Vec2((x1 + x2) / 2, (y1 + y2) / 2), 0);
+        xf.SetIdentity();
+
+        this.world.QueryAABB(function(fixture) {
+            var body = fixture.GetBody();
+            if (body.GetType() !== b2Body.b2_staticBody || fixture.IsSensor()) return true;
+            if (b2Shape.TestOverlap(probe, xf, fixture.GetShape(), body.GetTransform())) {
+                found = true;
+                return false;
+            }
+            return true;
+        }, aabb);
+
+        return found;
+    },
+
     getBodyPos: function(body) {
         return {
             x: 0,
@@ -387,7 +429,7 @@ var Physics = {
         var joint = null;
 
         function calculateWorldPosition(e) {
-            return point = {
+            return {
                 x: ((e.offsetX || e.layerX) - config.display.offset.x) / self.scale,
                 y: ((e.offsetY || e.layerY) - config.display.offset.y) / self.scale
             };

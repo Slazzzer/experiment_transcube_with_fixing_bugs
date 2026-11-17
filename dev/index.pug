@@ -1,14 +1,18 @@
-!!! 5
+doctype html
 html
     head
+        meta(charset="utf-8")
+        //- Everything the game needs is served from its own origin.
+        meta(http-equiv="Content-Security-Policy", content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';")
         title Trans&diams;cube
+        link(rel="icon", type="image/png", href="media/img/cube.png")
         link(rel="stylesheet", type="text/css", href="css/main.css")
     body
         #container
             canvas#canvas
             #ui
-                #levelselect              
-                    .title Level select 
+                #levelselect
+                    .title Level select
                     #levels
                     #menu
                         .menu Title
@@ -23,21 +27,21 @@ html
                 #end
                     #stats
                         div
-                            span#time 
+                            span#time
                             span.right Seconds
                         div
-                            span#restarts 
+                            span#restarts
                             span.right Restarts
                         div
-                            span#transforms 
+                            span#transforms
                             span.right Transforms
                         div
-                            span#deaths 
-                            span.right "Deaths"
+                            span#deaths
+                            span.right Deaths
                     #btns
                         .menu Menu
                         .retry Restart
-                        .next &gt;&gt; Next level (N) &gt;&gt;              
+                        .next &gt;&gt; Next level (N) &gt;&gt;
             #leveltitle.message.top Loading the loader!
             #icons-top
                 .left
@@ -48,16 +52,15 @@ html
                     .music
                     .mute
             #footer
-                #morphs 
+                #morphs
                     span Spawns a movable block you can stand on.
                     div
 
 
         script(type="text/javascript", src="js/soundmanager2-nodebug-jsmin.js")
-        script(type="text/javascript", src="js/jquery-1.10.1.min.js")
-        script(type="text/javascript", src="js/jquery.color-2.1.2.min.js")
-        if debug
+        script(type="text/javascript", src="js/jquery.min.js")
+        script(type="text/javascript", src="js/jquery.color.min.js")
+        if dev
             script(type="text/javascript", src="js/main.js")
-            script(type="text/javascript", src="//localhost:35729/livereload.js")
         else
             script(type="text/javascript", src="js/main.min.js")

@@ -44,7 +44,7 @@ var LB = Entity.extend({
 
     triggered: function(by, game) {
         if (++this.triggerCount === this.neededTriggers) {
-            this.reverse ? this.untrigger(by, game) : this.trigger(by, game);
+            this.reverse ? this.untrigger(game) : this.trigger(by, game);
             if (this.active) game.playSound('correct');
             this.active = false;
             this.animation = this.animations[(this.reverse ? '' : 'in') + 'active' + this.getTriggerAnim()];

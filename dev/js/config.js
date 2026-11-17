@@ -4,7 +4,9 @@ var Config = {
     //     level: 'end'
     // },
 
+    // Milliseconds per logic tick, and the game clock advanced by every tick.
     tick: 0,
+    time: 0,
 
     assetsPath: 'media/',
     defaultExt: {

@@ -1,6 +1,5 @@
 require('./lib/class.js');
 require('./lib/requestAnimFrame');
-require('./analytics');
 
 var Input = require('./engine/input');
 
@@ -18,7 +17,7 @@ $(document).keydown(Input._down.bind(Input));
 $(document).keyup(Input._up.bind(Input));
 $(document).mousedown(Input._down.bind(Input));
 $(document).mouseup(Input._up.bind(Input));
-$(document).bind('contextmenu', function() {
+$(document).on('contextmenu', function() {
     return false;
 });
 
