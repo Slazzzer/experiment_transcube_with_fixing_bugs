@@ -257,7 +257,11 @@ var Physics = {
             body.SetFixedRotation(false);
             var pjd = new b2PrismaticJointDef();
             var axis = options.fixed == "y" ? new b2Vec2(0, 1) : new b2Vec2(-1, 0);
-            pjd.Initialize(body, this.world.GetGroundBody(), new b2Vec2(0, 0), axis);
+            // Anchor the joint on the body itself. Anchored at the world origin
+            // (hundreds of px away) the joint is numerically unstable: landing
+            // on the edge of a Floater far from the origin launched it ~35px
+            // up and killed the player (level 21).
+            pjd.Initialize(body, this.world.GetGroundBody(), body.GetWorldCenter(), axis);
             if (options.limit) {
                 pjd.enableLimit = true;
                 pjd.lowerTranslation = options.limit.lower;

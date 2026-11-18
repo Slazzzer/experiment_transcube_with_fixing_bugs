@@ -66,6 +66,8 @@ var Player = Entity.extend({
     kill: function(game, time) {
         if(this.animation === this.animations['endlevel']) return;
         if(this.animation !== this.animations['hit']) {
+            // A cancelled Floater transform must not leave the world paused.
+            if (game.level.morphing) p.setPaused(false);
             this.killed = true;
             this.morphing = false;
             game.level.morphing = false;
